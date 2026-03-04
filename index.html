@@ -124,6 +124,24 @@
         <script src="./resources/Autolinker.min.js"></script>
         <script src="./resources/qgis2web.js"></script>
         <script>
+            <nav class="h-[60px] bg-navbar flex items-center justify-between px-6 shadow-lg z-[2000] shrink-0">
+    <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center bg-white p-1 rounded-full shadow-inner w-10 h-10">
+            <img src="logo.png" alt="Logo Smart Resident" class="h-8 w-auto object-contain">
+        </div>
+        
+        <div class="flex flex-col leading-tight">
+            <h1 class="text-white text-xl font-bold italic tracking-tighter uppercase" style="font-family: 'Georgia', serif;">
+                smart resident
+            </h1>
+            <span class="text-[10px] text-green-400 font-medium tracking-[0.2em] uppercase">Land Explorer System</span>
+        </div>
+    </div>
+
+    <div class="hidden md:block">
+        <span class="text-white/50 text-[10px] uppercase font-semibold">Sistem Maklumat Geografi</span>
+    </div>
+</nav>
             // 1. Tambah Google Satellite tanpa kacau layers.js
             var lyr_GoogleSatellite = new ol.layer.Tile({
                 title: 'Google Satellite',
@@ -165,4 +183,5 @@
         </script>
     </body>
 </html>
+
 
