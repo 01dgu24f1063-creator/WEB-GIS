@@ -3,42 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web GIS - Land Explorer</title>
+    <title>Web GIS - PUO Land Explorer</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
 
-        body {
-            display: flex;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
+        body { display: flex; height: 100vh; background-color: #f0f0f0; overflow: hidden; }
 
-        /* Ruang Simpanan Peta (Placeholder) */
-        #map-container {
-            flex-grow: 1;
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e4/Google_Earth_Satellite_View.jpg'); /* Contoh latar belakang satelit */
-            background-size: cover;
-            background-position: center;
-            position: relative;
+        /* Peta memenuhi ruang kiri */
+        #map { flex-grow: 1; height: 100%; position: relative; }
+
+        /* Logo PUO */
+        .logo-puo {
+            position: absolute;
+            top: 20px;
+            left: 60px; /* Jarak dari control zoom leaflet */
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
+        .logo-puo img { height: 60px; width: auto; }
 
         /* Sidebar Styling */
         .sidebar {
             width: 320px;
-            background-color: #1e2229; /* Warna kelabu gelap */
+            background-color: #1e2229;
             color: #ffffff;
             height: 100vh;
             padding: 20px;
             overflow-y: auto;
             box-shadow: -5px 0 15px rgba(0,0,0,0.3);
-            z-index: 1000;
+            z-index: 1001;
         }
 
         .sidebar-header {
@@ -51,25 +51,10 @@
             padding-bottom: 10px;
         }
 
-        .sidebar-header i {
-            margin-right: 10px;
-        }
+        .sidebar-header i { margin-right: 10px; }
 
-        .section-title {
-            font-size: 14px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        .section-title span {
-            margin-left: 8px;
-        }
-
-        /* Input & Buttons */
-        .input-group {
-            margin-bottom: 20px;
-        }
+        .section-title { font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; }
+        .section-title span { margin-left: 8px; }
 
         input[type="text"] {
             width: 100%;
@@ -78,7 +63,6 @@
             border: 1px solid #444;
             border-radius: 4px;
             color: white;
-            font-size: 16px;
             margin-bottom: 10px;
         }
 
@@ -94,17 +78,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.2s;
         }
-
-        .btn i { margin-right: 8px; }
-        .btn:hover { opacity: 0.9; }
 
         .btn-green { background-color: #2d7d46; }
         .btn-red { background-color: #c0392b; }
         .btn-blue { background-color: #2980b9; }
 
-        /* Info Card Styling */
         .info-card {
             background-color: #161a20;
             border-left: 4px solid #2d7d46;
@@ -113,33 +92,18 @@
             border-radius: 4px;
         }
 
-        .info-label {
-            font-size: 11px;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
+        .info-label { font-size: 11px; color: #999; text-transform: uppercase; margin-bottom: 5px; }
+        .info-value { font-size: 18px; font-weight: bold; color: #4cd137; }
 
-        .info-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #4cd137; /* Warna hijau neon */
-        }
-
-        /* Scrollbar kustom */
-        .sidebar::-webkit-scrollbar {
-            width: 5px;
-        }
-        .sidebar::-webkit-scrollbar-thumb {
-            background: #444;
-        }
     </style>
 </head>
 <body>
 
-    <div id="map-container">
+    <div id="map">
+        <div class="logo-puo">
+            <img src="https://upload.wikimedia.org/wikipedia/ms/thumb/0/05/Logo_Politeknik_Ungku_Omar.png/250px-Logo_Politeknik_Ungku_Omar.png" alt="Logo PUO">
         </div>
+    </div>
 
     <div class="sidebar">
         <div class="sidebar-header">
@@ -181,19 +145,51 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
+        // 1. Konfigurasi Layer Google Maps
+        const googleSatellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains:['mt0','mt1','mt2','mt3'],
+            attribution: 'Google Satellite'
+        });
+
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains:['mt0','mt1','mt2','mt3'],
+            attribution: 'Google Hybrid'
+        });
+
+        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'OpenStreetMap'
+        });
+
+        // 2. Init Peta (Set default ke PUO Ipoh)
+        const map = L.map('map', {
+            center: [4.5891, 101.1232], 
+            zoom: 16,
+            layers: [googleSatellite] // Default layer
+        });
+
+        // 3. Tambah Control Layer (Pilih di bucu kanan atas)
+        const baseMaps = {
+            "Google Satellite": googleSatellite,
+            "Google Hybrid": googleHybrid,
+            "OpenStreetMap": osm
+        };
+        L.control.layers(baseMaps).addTo(map);
+
+        // Fungsi Butang
         function searchLot() {
             const lotNo = document.getElementById('lotInput').value;
-            if(lotNo) {
-                document.getElementById('disp-lot').innerText = lotNo;
-                alert('Mencari Lot: ' + lotNo);
-                // Di sini anda boleh masukkan logik AJAX/Fetch untuk ambil data dari database
-            }
+            document.getElementById('disp-lot').innerText = lotNo;
+            alert('Mencari data untuk lot ' + lotNo + ' di PUO...');
         }
 
         function resetMap() {
+            map.setView([4.5891, 101.1232], 16);
             document.getElementById('lotInput').value = '';
-            alert('Peta telah di-reset.');
         }
     </script>
 </body>
