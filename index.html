@@ -5,7 +5,6 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <script src="https://cdn.tailwindcss.com"></script>
-        
         <link rel="stylesheet" href="./resources/ol.css">
         <link rel="stylesheet" href="resources/fontawesome-all.min.css">
         <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
@@ -19,32 +18,10 @@
             .bg-card { background-color: #111319; }
             .text-accent { color: #4ade80; }
             
-            .logo-container {
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                transition: transform 0.2s ease;
-            }
-            .logo-container:hover {
-                transform: scale(1.02);
-            }
-
-            /* Style untuk checkbox custom */
-            .switch {
-                position: relative;
-                display: inline-block;
-                width: 34px;
-                height: 20px;
-            }
+            .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
             .switch input { opacity: 0; width: 0; height: 0; }
-            .slider {
-                position: absolute; cursor: pointer;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background-color: #444; transition: .4s; border-radius: 34px;
-            }
-            .slider:before {
-                position: absolute; content: "";
-                height: 14px; width: 14px; left: 3px; bottom: 3px;
-                background-color: white; transition: .4s; border-radius: 50%;
-            }
+            .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
+            .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
             input:checked + .slider { background-color: #22c55e; }
             input:checked + .slider:before { transform: translateX(14px); }
         </style>
@@ -69,12 +46,21 @@
 
             <aside class="w-80 bg-sidebar h-full text-white p-5 shadow-2xl z-[1001] border-l border-gray-800 overflow-y-auto">
                 
-                <div class="mb-6 p-4 bg-card rounded-md border border-gray-700">
+                <div class="mb-6 p-4 bg-card rounded-md border border-gray-700 space-y-4">
                     <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-3">Kawalan Layer</p>
+                    
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Batu Sempadan</span>
                         <label class="switch">
-                            <input type="checkbox" id="toggleBatu" checked onchange="toggleLayer(this.checked)">
+                            <input type="checkbox" id="toggleBatu" checked onchange="toggleLayer('batu', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Lot Final</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleLot" checked onchange="toggleLayer('lot', this.checked)">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -101,10 +87,6 @@
                         <p class="text-[9px] text-gray-500 font-bold uppercase">Luas Lot</p>
                         <p class="text-accent text-lg font-bold" id="lotArea">0 m²</p>
                     </div>
-                </div>
-                
-                <div class="mt-10 pt-6 border-t border-gray-800 text-center">
-                    <p class="text-[10px] text-gray-500 uppercase tracking-tighter">Sistem Pemetaan Pintar &copy; 2024</p>
                 </div>
             </aside>
         </div>
@@ -143,11 +125,16 @@
             });
             map.addLayer(highlightLayer);
 
-            // FUNGSI ON/OFF LAYER BATU SEMPADAN
-            function toggleLayer(isVisible) {
-                // lyr_batusempadanmerge_1 adalah nama pembolehubah dari layers.js/batusempadanmerge_1.js
-                if (typeof lyr_batusempadanmerge_1 !== 'undefined') {
-                    lyr_batusempadanmerge_1.setVisible(isVisible);
+            // FUNGSI ON/OFF LAYER DINAMIK
+            function toggleLayer(type, isVisible) {
+                if (type === 'batu') {
+                    if (typeof lyr_batusempadanmerge_1 !== 'undefined') {
+                        lyr_batusempadanmerge_1.setVisible(isVisible);
+                    }
+                } else if (type === 'lot') {
+                    if (typeof lyr_Lotfinal_0 !== 'undefined') {
+                        lyr_Lotfinal_0.setVisible(isVisible);
+                    }
                 }
             }
 
