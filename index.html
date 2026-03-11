@@ -26,6 +26,27 @@
             .logo-container:hover {
                 transform: scale(1.02);
             }
+
+            /* Style untuk checkbox custom */
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 34px;
+                height: 20px;
+            }
+            .switch input { opacity: 0; width: 0; height: 0; }
+            .slider {
+                position: absolute; cursor: pointer;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background-color: #444; transition: .4s; border-radius: 34px;
+            }
+            .slider:before {
+                position: absolute; content: "";
+                height: 14px; width: 14px; left: 3px; bottom: 3px;
+                background-color: white; transition: .4s; border-radius: 50%;
+            }
+            input:checked + .slider { background-color: #22c55e; }
+            input:checked + .slider:before { transform: translateX(14px); }
         </style>
         <title>Smart Resident - Land Explorer</title>
     </head>
@@ -36,7 +57,6 @@
                 <div class="logo-container bg-white p-2 rounded-md w-20 h-20 flex items-center justify-center">
                     <img src="Poli_Logo.png" alt="Logo" class="w-full h-full object-contain">
                 </div>
-                
                 <div class="flex flex-col leading-tight">
                     <h1 class="text-white text-3xl font-extrabold italic uppercase tracking-wider">smart resident</h1>
                     <span class="text-xs text-green-400 font-bold uppercase tracking-[0.4em]">Land Explorer System</span>
@@ -48,6 +68,18 @@
             <div id="map" class="flex-1 z-0 relative"></div>
 
             <aside class="w-80 bg-sidebar h-full text-white p-5 shadow-2xl z-[1001] border-l border-gray-800 overflow-y-auto">
+                
+                <div class="mb-6 p-4 bg-card rounded-md border border-gray-700">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-3">Kawalan Layer</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Batu Sempadan</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleBatu" checked onchange="toggleLayer(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="space-y-3 mb-8">
                     <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Carian Data</label>
                     <input type="text" id="lotInput" placeholder="Masukkan No Lot (Contoh: 11462)" 
@@ -89,6 +121,7 @@
         <script src="./resources/qgis2web.js"></script>
 
         <script>
+            // 1. Google Satellite
             var lyr_GoogleSatellite = new ol.layer.Tile({
                 title: 'Google Satellite',
                 type: 'base',
@@ -99,6 +132,7 @@
             });
             map.getLayers().insertAt(0, lyr_GoogleSatellite);
 
+            // 2. Highlight Layer
             var highlightLayer = new ol.layer.Vector({
                 source: new ol.source.Vector(),
                 style: new ol.style.Style({
@@ -108,6 +142,14 @@
                 zIndex: 100
             });
             map.addLayer(highlightLayer);
+
+            // FUNGSI ON/OFF LAYER BATU SEMPADAN
+            function toggleLayer(isVisible) {
+                // lyr_batusempadanmerge_1 adalah nama pembolehubah dari layers.js/batusempadanmerge_1.js
+                if (typeof lyr_batusempadanmerge_1 !== 'undefined') {
+                    lyr_batusempadanmerge_1.setVisible(isVisible);
+                }
+            }
 
             function highlightFeature(feature) {
                 highlightLayer.getSource().clear(); 
