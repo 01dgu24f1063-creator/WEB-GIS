@@ -2,18 +2,32 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="./resources/ol.css">
+        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
+        <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
+        <link rel="stylesheet" href="./resources/qgis2web.css">
         
         <style>
             html, body { height: 100%; margin: 0; padding: 0; background-color: #ffffff; overflow: hidden; }
-            #map { width: 100%; height: 100%; transition: all 0.3s; }
-            #sidebar { transition: all 0.3s ease; }
+            #map { width: 100%; height: 100%; }
             .bg-navbar { background-color: #2d5a27; } 
             .bg-sidebar { background-color: #1e212d; }
             .bg-card { background-color: #111319; }
             .text-accent { color: #4ade80; }
+            
+            /* CSS untuk Sidebar Collapsed */
+            .sidebar-panel { 
+                transition: transform 0.3s ease-in-out; 
+                position: absolute; 
+                right: 0; 
+                top: 0; 
+                height: 100%; 
+                z-index: 1001;
+            }
+            .collapsed { transform: translateX(100%); }
             
             .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
             .switch input { opacity: 0; width: 0; height: 0; }
@@ -24,40 +38,36 @@
         </style>
         <title>Smart Resident - Land Explorer</title>
     </head>
-    <body class="flex flex-col h-screen">
+    <body class="flex flex-col h-screen overflow-hidden">
 
-        <nav class="h-[80px] bg-navbar flex items-center px-6 shadow-lg z-[2000] shrink-0 border-b border-green-800">
-            <button onclick="toggleSidebar()" class="text-white text-xl mr-4 hover:text-green-400">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="flex flex-row items-center gap-4">
-                <div class="bg-white p-1 rounded-md w-12 h-12 flex items-center justify-center">
+        <nav class="h-[100px] bg-navbar flex items-center justify-between px-6 shadow-lg z-[2000] shrink-0 border-b border-green-800">
+            <div class="flex flex-row items-center gap-6">
+                <div class="logo-container bg-white p-2 rounded-md w-20 h-20 flex items-center justify-center">
                     <img src="Poli_Logo.png" alt="Logo" class="w-full h-full object-contain">
                 </div>
                 <div class="flex flex-col leading-tight">
-                    <h1 class="text-white text-xl font-extrabold italic uppercase">smart resident</h1>
-                    <span class="text-[10px] text-green-400 font-bold uppercase">Land Explorer System</span>
+                    <h1 class="text-white text-3xl font-extrabold italic uppercase tracking-wider">smart resident</h1>
+                    <span class="text-xs text-green-400 font-bold uppercase tracking-[0.4em]">Land Explorer System</span>
                 </div>
             </div>
+            <button onclick="toggleSidebar()" class="bg-green-600 text-white p-3 rounded-md hover:bg-green-500 transition">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
         </nav>
 
         <div class="flex flex-1 overflow-hidden relative">
             <div id="map" class="flex-1 z-0 relative"></div>
 
-            <aside id="sidebar" class="w-80 bg-sidebar h-full text-white p-5 shadow-2xl z-[1001] border-l border-gray-800 overflow-y-auto">
-                <div class="flex justify-end mb-4 md:hidden">
-                    <button onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
-                </div>
-                
+            <aside id="sidebar" class="sidebar-panel w-80 bg-sidebar text-white p-5 shadow-2xl border-l border-gray-800 overflow-y-auto">
                 <div class="mb-6 p-4 bg-card rounded-md border border-gray-700 space-y-4">
                     <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-3">Kawalan Layer</p>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Batu Sempadan</span>
-                        <label class="switch"><input type="checkbox" checked onchange="toggleLayer('batu', this.checked)"><span class="slider"></span></label>
+                        <label class="switch"><input type="checkbox" id="toggleBatu" checked onchange="toggleLayer('batu', this.checked)"><span class="slider"></span></label>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Lot Final</span>
-                        <label class="switch"><input type="checkbox" checked onchange="toggleLayer('lot', this.checked)"><span class="slider"></span></label>
+                        <label class="switch"><input type="checkbox" id="toggleLot" checked onchange="toggleLayer('lot', this.checked)"><span class="slider"></span></label>
                     </div>
                 </div>
 
@@ -66,27 +76,37 @@
                     <input type="text" id="lotInput" placeholder="No Lot atau Nama Pemilik" class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm text-white focus:ring-2 focus:ring-green-500 outline-none">
                     <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2.5 rounded-md text-sm font-bold transition text-white">Cari Data</button>
                 </div>
-                
-                <div class="space-y-4">
-                    <div class="bg-card border-l-4 border-green-500 p-4"><p class="text-[9px] text-gray-500 font-bold uppercase">No Lot Dipilih</p><p class="text-accent text-lg font-bold" id="selectedLot">-</p></div>
-                    <div class="bg-card border-l-4 border-green-500 p-4"><p class="text-[9px] text-gray-500 font-bold uppercase">Nama Pemilik</p><p class="text-accent text-sm font-bold" id="ownerName">-</p></div>
-                </div>
             </aside>
         </div>
 
+        <script src="resources/qgis2web_expressions.js"></script>
+        <script src="./resources/functions.js"></script>
+        <script src="./resources/ol.js"></script>
+        <script src="./resources/ol-layerswitcher.js"></script>
+        <script src="layers/Lotfinal_0.js"></script>
+        <script src="layers/batusempadanmerge_1.js"></script>
+        <script src="styles/Lotfinal_0_style.js"></script>
+        <script src="styles/batusempadanmerge_1_style.js"></script>
+        <script src="./layers/layers.js" type="text/javascript"></script> 
+        <script src="./resources/qgis2web.js"></script>
+
         <script>
-            // Fungsi untuk toggle sidebar
+            // Fungsi Toggle Sidebar
             function toggleSidebar() {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar.style.display === 'none') {
-                    sidebar.style.display = 'block';
-                    sidebar.style.width = '320px';
-                } else {
-                    sidebar.style.display = 'none';
-                }
+                document.getElementById('sidebar').classList.toggle('collapsed');
             }
-            
-            // ... (Fungsi toggleLayer, highlightFeature, dan searchLot anda kekal sama)
+
+            // Fungsi Peta Asal anda
+            var lyr_GoogleSatellite = new ol.layer.Tile({
+                title: 'Google Satellite', type: 'base', visible: true,
+                source: new ol.source.XYZ({ url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' })
+            });
+            map.getLayers().insertAt(0, lyr_GoogleSatellite);
+
+            function toggleLayer(type, isVisible) {
+                if (type === 'batu' && typeof lyr_batusempadanmerge_1 !== 'undefined') lyr_batusempadanmerge_1.setVisible(isVisible);
+                if (type === 'lot' && typeof lyr_Lotfinal_0 !== 'undefined') lyr_Lotfinal_0.setVisible(isVisible);
+            }
         </script>
     </body>
 </html>
