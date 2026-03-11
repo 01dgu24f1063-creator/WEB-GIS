@@ -44,25 +44,28 @@
                         <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="baseMap" value="roadmap" onchange="changeBaseLayer(this.value)"> <span class="text-sm">Google Street View</span></label>
                     </div>
                     <p class="text-[10px] text-gray-400 font-bold uppercase mb-3">Kawalan Layer</p>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">Batu Sempadan</span>
-                        <input type="checkbox" id="toggleBatu" checked onchange="toggleLayer(this.checked)" class="w-5 h-5 accent-green-500">
+                    <div class="space-y-2">
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm">Batu Sempadan</span>
+                            <input type="checkbox" id="toggleBatu" checked onchange="toggleLayer('lyr_batusempadanmerge_1', this.checked)" class="w-5 h-5 accent-green-500">
+                        </label>
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm">Lot Tanah</span>
+                            <input type="checkbox" id="toggleLot" checked onchange="toggleLayer('lyr_Lotfinal_0', this.checked)" class="w-5 h-5 accent-green-500">
+                        </label>
                     </div>
                 </div>
 
                 <div class="space-y-3 mb-8">
-                    <input type="text" id="lotInput" placeholder="Contoh: 11462" class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                    <input type="text" id="lotInput" placeholder="Masukkan No Lot..." class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none">
                     <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2 rounded-md font-bold text-sm">Cari Lot</button>
-                </div>
-
-                <div class="space-y-4" id="infoPanel">
-                    <div class="bg-card p-3 border-l-4 border-green-500"><p class="text-[9px] text-gray-500 uppercase">No Lot</p><p class="text-accent font-bold" id="selectedLot">-</p></div>
-                    <div class="bg-card p-3 border-l-4 border-green-500"><p class="text-[9px] text-gray-500 uppercase">Pemilik</p><p class="text-accent font-bold" id="ownerName">-</p></div>
                 </div>
             </aside>
         </div>
 
         <script src="./resources/ol.js"></script>
+        <script src="layers/Lotfinal_0.js"></script>
+        <script src="layers/batusempadanmerge_1.js"></script>
         <script src="./layers/layers.js"></script> 
         <script src="./resources/qgis2web.js"></script>
 
@@ -71,7 +74,6 @@
             var lyr_Satellite = new ol.source.XYZ({ url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' });
             var lyr_Roadmap = new ol.source.XYZ({ url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}' });
             
-            // Masukkan Satellite sebagai layer pertama
             var baseLayer = new ol.layer.Tile({ source: lyr_Satellite });
             map.getLayers().insertAt(0, baseLayer);
 
@@ -79,29 +81,21 @@
                 baseLayer.setSource(type === 'satellite' ? lyr_Satellite : lyr_Roadmap);
             }
 
-            function toggleLayer(isVisible) {
-                if (typeof lyr_batusempadanmerge_1 !== 'undefined') lyr_batusempadanmerge_1.setVisible(isVisible);
+            // Fungsi Toggle untuk semua layer (termasuk Lot)
+            function toggleLayer(layerName, isVisible) {
+                var layer = window[layerName];
+                if (layer) layer.setVisible(isVisible);
             }
-
-            // Fungsi auto-zoom ke layer Lot
-            window.addEventListener('load', function() {
-                setTimeout(() => {
-                    if (typeof lyr_Lotfinal_0 !== 'undefined') {
-                        var extent = lyr_Lotfinal_0.getSource().getExtent();
-                        map.getView().fit(extent, {padding: [50, 50, 50, 50]});
-                    }
-                }, 1000);
-            });
 
             function searchLot() {
                 var val = document.getElementById('lotInput').value;
-                lyr_Lotfinal_0.getSource().getFeatures().forEach(function(f) {
-                    if(f.get('NO_LOT') == val) {
-                        map.getView().fit(f.getGeometry().getExtent(), {duration: 1000, padding: [100, 100, 100, 100]});
-                        document.getElementById('selectedLot').innerText = f.get('NO_LOT');
-                        document.getElementById('ownerName').innerText = f.get('tsp — pe') || 'Tiada Data';
-                    }
-                });
+                if(typeof lyr_Lotfinal_0 !== 'undefined') {
+                    lyr_Lotfinal_0.getSource().getFeatures().forEach(function(f) {
+                        if(f.get('NO_LOT') == val) {
+                            map.getView().fit(f.getGeometry().getExtent(), {duration: 1000, padding: [100, 100, 100, 100]});
+                        }
+                    });
+                }
             }
         </script>
     </body>
