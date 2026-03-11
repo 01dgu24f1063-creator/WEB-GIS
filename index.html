@@ -18,19 +18,28 @@
             .bg-sidebar { background-color: #1e212d; }
             .bg-card { background-color: #111319; }
             .text-accent { color: #4ade80; }
+            
+            /* Animasi halus untuk logo */
+            .logo-container {
+                box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                transition: transform 0.3s ease;
+            }
+            .logo-container:hover {
+                transform: scale(1.05);
+            }
         </style>
         <title>Smart Resident - Land Explorer</title>
     </head>
     <body class="flex flex-col h-screen">
 
-        <nav class="h-[60px] bg-navbar flex items-center justify-between px-6 shadow-lg z-[2000] shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="flex items-center justify-center bg-white p-1 rounded-full w-10 h-10">
-                    <img src="Poli_Logo.png" alt="Logo" class="h-7 w-auto object-contain">
+        <nav class="h-[100px] bg-navbar flex items-center justify-center px-6 shadow-lg z-[2000] shrink-0 border-b border-green-800">
+            <div class="flex flex-col items-center gap-2">
+                <div class="logo-container flex items-center justify-center bg-white p-1 rounded-full w-16 h-16">
+                    <img src="Poli_Logo.png" alt="Logo" class="h-12 w-auto object-contain">
                 </div>
-                <div class="flex flex-col leading-tight">
-                    <h1 class="text-white text-xl font-bold italic uppercase">smart resident</h1>
-                    <span class="text-[10px] text-green-400 font-medium uppercase tracking-widest">Land Explorer System</span>
+                <div class="flex flex-col leading-tight text-center">
+                    <h1 class="text-white text-xl font-extrabold italic uppercase tracking-wider">smart resident</h1>
+                    <span class="text-[10px] text-green-400 font-bold uppercase tracking-[0.3em]">Land Explorer System</span>
                 </div>
             </div>
         </nav>
@@ -38,27 +47,32 @@
         <div class="flex flex-1 overflow-hidden relative">
             <div id="map" class="flex-1 z-0 relative"></div>
 
-            <aside class="w-80 bg-sidebar h-full text-white p-5 shadow-2xl z-[1001] border-l border-gray-800">
+            <aside class="w-80 bg-sidebar h-full text-white p-5 shadow-2xl z-[1001] border-l border-gray-800 overflow-y-auto">
                 <div class="space-y-3 mb-8">
+                    <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Carian Data</label>
                     <input type="text" id="lotInput" placeholder="Masukkan No Lot (Contoh: 11462)" 
-                        class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm text-white focus:ring-1 focus:ring-green-500 outline-none">
-                    <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2.5 rounded-md text-sm font-bold transition text-white">Cari Lot</button>
-                    <button onclick="location.reload()" class="w-full bg-red-600 hover:bg-red-500 py-2.5 rounded-md text-sm font-bold transition text-white">Reset Peta</button>
+                        class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm text-white focus:ring-2 focus:ring-green-500 outline-none transition-all">
+                    <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2.5 rounded-md text-sm font-bold transition text-white shadow-lg">Cari Lot</button>
+                    <button onclick="location.reload()" class="w-full bg-gray-700 hover:bg-red-600 py-2.5 rounded-md text-sm font-bold transition text-white">Reset Peta</button>
                 </div>
 
                 <div class="space-y-4">
-                    <div class="bg-card border-l-4 border-green-500 p-4">
+                    <div class="bg-card border-l-4 border-green-500 p-4 rounded-r-md">
                         <p class="text-[9px] text-gray-500 font-bold uppercase">No Lot Dipilih</p>
                         <p class="text-accent text-lg font-bold" id="selectedLot">-</p>
                     </div>
-                    <div class="bg-card border-l-4 border-green-500 p-4">
+                    <div class="bg-card border-l-4 border-green-500 p-4 rounded-r-md">
                         <p class="text-[9px] text-gray-500 font-bold uppercase">Nama Pemilik</p>
                         <p class="text-accent text-sm font-bold uppercase" id="ownerName">-</p>
                     </div>
-                    <div class="bg-card border-l-4 border-green-500 p-4">
+                    <div class="bg-card border-l-4 border-green-500 p-4 rounded-r-md">
                         <p class="text-[9px] text-gray-500 font-bold uppercase">Luas Lot</p>
                         <p class="text-accent text-lg font-bold" id="lotArea">0 m²</p>
                     </div>
+                </div>
+                
+                <div class="mt-10 pt-6 border-t border-gray-800 text-center">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-tighter">Sistem Pemetaan Pintar &copy; 2024</p>
                 </div>
             </aside>
         </div>
@@ -86,28 +100,26 @@
             });
             map.getLayers().insertAt(0, lyr_GoogleSatellite);
 
-            // 2. LOGIK HIGHLIGHT (Tukar Warna)
-            // Kita bina satu layer kosong khas untuk "warna pilihan"
+            // 2. Logik Highlight (Warna Kuning apabila Lot dipilih)
             var highlightLayer = new ol.layer.Vector({
                 source: new ol.source.Vector(),
                 style: new ol.style.Style({
                     fill: new ol.style.Fill({
-                        color: 'rgba(255, 255, 0, 0.4)' // Warna kuning lutsinar
+                        color: 'rgba(255, 255, 0, 0.4)' 
                     }),
                     stroke: new ol.style.Stroke({
-                        color: '#ffcc33', // Warna garisan oren/kuning
-                        width: 3
+                        color: '#ffcc33',
+                        width: 4
                     })
                 }),
                 zIndex: 100
             });
             map.addLayer(highlightLayer);
 
-            // Fungsi untuk kemaskini sidebar & highlight
             function highlightFeature(feature) {
-                highlightLayer.getSource().clear(); // Buang highlight lama
+                highlightLayer.getSource().clear(); 
                 if (feature) {
-                    highlightLayer.getSource().addFeature(feature); // Tambah highlight baru
+                    highlightLayer.getSource().addFeature(feature); 
                     
                     var props = feature.getProperties();
                     document.getElementById('selectedLot').innerText = props.NO_LOT || '-';
@@ -127,18 +139,23 @@
             // 4. Fungsi Carian Lot
             function searchLot() {
                 var val = document.getElementById('lotInput').value;
-                var found = false;
+                if(!val) return alert("Sila masukkan No Lot.");
                 
+                var found = false;
                 lyr_Lotfinal_0.getSource().getFeatures().forEach(function(f) {
                     if(f.get('NO_LOT') == val) {
                         var extent = f.getGeometry().getExtent();
-                        map.getView().fit(extent, {duration: 1000, padding: [100, 100, 100, 100]});
-                        highlightFeature(f); // Jalankan highlight apabila jumpa
+                        map.getView().fit(extent, {
+                            duration: 1200, 
+                            padding: [100, 100, 100, 100],
+                            maxZoom: 19
+                        });
+                        highlightFeature(f);
                         found = true;
                     }
                 });
                 
-                if(!found) alert("Lot " + val + " tidak dijumpai dalam sistem.");
+                if(!found) alert("Lot " + val + " tidak dijumpai dalam pangkalan data.");
             }
         </script>
     </body>
