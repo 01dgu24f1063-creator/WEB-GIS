@@ -63,7 +63,7 @@
                     </div>
 
                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">Lot Final</span>
+                        <span class="text-sm font-medium">Lot Final (Berwarna)</span>
                         <label class="switch">
                             <input type="checkbox" id="toggleLot" checked onchange="toggleLayer('lot', this.checked)">
                             <span class="slider"></span>
@@ -144,31 +144,40 @@
             var highlightLayer = new ol.layer.Vector({
                 source: new ol.source.Vector(),
                 style: new ol.style.Style({
-                    fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.4)' }),
+                    fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.6)' }), // Lebih pekat sedikit semasa highlight
                     stroke: new ol.style.Stroke({ color: '#ffcc33', width: 4 })
                 }),
                 zIndex: 100
             });
             map.addLayer(highlightLayer);
 
-            // Fungsi untuk bina style dinamik (PENTING: Kekalkan style asal qgis2web)
+            // Fungsi untuk bina style dinamik BERWARNA (Menggantikan style asal qgis2web yang transparent)
             function updateLotStyle() {
                 if (typeof lyr_Lotfinal_0 !== 'undefined') {
                     lyr_Lotfinal_0.setStyle(function(feature) {
-                        // Guna stail asal poligon dari qgis2web
-                        var style = style_Lotfinal_0(feature); 
+                        // Cipta style baru yang BERWARNA pekat (tidak transparent)
+                        var style = new ol.style.Style({
+                            // Warna isian poligon (contoh: Hijau cair, pekat/opacity tinggi)
+                            fill: new ol.style.Fill({
+                                color: 'rgba(144, 238, 144, 0.8)' // Opacity 0.8 (80% pekat)
+                            }),
+                            // Warna garisan sempadan
+                            stroke: new ol.style.Stroke({
+                                color: 'rgba(35, 35, 35, 1.0)', // Hitam pekat
+                                width: 1
+                            })
+                        });
                         
                         // Tambah label jika toggle ON
                         if (isLabelOn) {
                             style.setText(new ol.style.Text({
                                 text: String(feature.get('NO_LOT') || ''),
-                                font: 'bold 12px Arial',
-                                fill: new ol.style.Fill({ color: '#ffffff' }),
-                                stroke: new ol.style.Stroke({ color: '#000000', width: 3 }),
-                                placement: 'point'
+                                font: 'bold 13px Arial',
+                                fill: new ol.style.Fill({ color: '#000000' }), // Teks Hitam supaya jelas atas warna hijau
+                                stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }), // Stroke putih
+                                placement: 'point',
+                                overflow: true
                             }));
-                        } else {
-                            style.setText(null);
                         }
                         return style;
                     });
@@ -232,6 +241,9 @@
                 });
                 if(!found) alert("Tiada data dijumpai untuk: " + val);
             }
+
+            // Jalankan fungsi style sekali semasa loading untuk set warna awal
+            updateLotStyle();
         </script>
     </body>
 </html>
