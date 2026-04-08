@@ -24,6 +24,12 @@
             .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
             input:checked + .slider { background-color: #22c55e; }
             input:checked + .slider:before { transform: translateX(14px); }
+
+            /* Hide elements during print */
+            @media print {
+                nav, aside, .button-container { display: none !important; }
+                #map { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; }
+            }
         </style>
         <title>Smart Resident - Land Explorer</title>
     </head>
@@ -68,18 +74,21 @@
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Label No Lot</span>
                         <label class="switch">
-                            <input type="checkbox" id="toggleLabel" checked onchange="toggleLayer('label', this.checked)">
+                            <input type="checkbox" id="toggleLabel" onchange="toggleLayer('label', this.checked)">
                             <span class="slider"></span>
                         </label>
                     </div>
                 </div>
 
-                <div class="space-y-3 mb-8">
+                <div class="space-y-3 mb-6">
                     <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Carian Data</label>
                     <input type="text" id="lotInput" placeholder="No Lot atau Nama Pemilik" 
                         class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm text-white focus:ring-2 focus:ring-green-500 outline-none transition-all">
                     <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2.5 rounded-md text-sm font-bold transition text-white shadow-lg">Cari Data</button>
-                    <button onclick="location.reload()" class="w-full bg-gray-700 hover:bg-red-600 py-2.5 rounded-md text-sm font-bold transition text-white">Reset Peta</button>
+                    <div class="flex gap-2">
+                        <button onclick="window.print()" class="flex-1 bg-blue-700 hover:bg-blue-600 py-2.5 rounded-md text-sm font-bold transition text-white">Cetak Peta</button>
+                        <button onclick="location.reload()" class="flex-1 bg-gray-700 hover:bg-red-600 py-2.5 rounded-md text-sm font-bold transition text-white">Reset</button>
+                    </div>
                 </div>
 
                 <div class="space-y-4">
@@ -139,32 +148,39 @@
             });
             map.addLayer(highlightLayer);
 
+            // Fungsi Global Style Label (Fungsi Baru)
+            function getLotStyle(feature, isLabelVisible) {
+                return new ol.style.Style({
+                    stroke: new ol.style.Stroke({ color: 'rgba(35,35,35,1.0)', width: 1 }),
+                    fill: new ol.style.Fill({ color: 'rgba(125,139,143,0.0)' }), // Lutsinar
+                    text: isLabelVisible ? new ol.style.Text({
+                        text: String(feature.get('NO_LOT')),
+                        font: 'bold 12px "Open Sans", sans-serif',
+                        fill: new ol.style.Fill({ color: '#ffffff' }),
+                        stroke: new ol.style.Stroke({ color: '#000000', width: 2 }),
+                        overflow: true
+                    }) : null
+                });
+            }
+
             // FUNGSI ON/OFF LAYER DINAMIK
             function toggleLayer(type, isVisible) {
                 if (type === 'batu') {
-                    if (typeof lyr_batusempadanmerge_1 !== 'undefined') {
-                        lyr_batusempadanmerge_1.setVisible(isVisible);
-                    }
+                    if (typeof lyr_batusempadanmerge_1 !== 'undefined') lyr_batusempadanmerge_1.setVisible(isVisible);
                 } else if (type === 'lot') {
-                    if (typeof lyr_Lotfinal_0 !== 'undefined') {
-                        lyr_Lotfinal_0.setVisible(isVisible);
-                    }
+                    if (typeof lyr_Lotfinal_0 !== 'undefined') lyr_Lotfinal_0.setVisible(isVisible);
                 } else if (type === 'label') {
-                    // Logik untuk tutup teks/label pada layer Lot
                     if (typeof lyr_Lotfinal_0 !== 'undefined') {
-                        // Secara teknis mengubah resolusi paparan label atau filter style
-                        // Cara termudah adalah mengawal opacity text melalui style variable jika disokong
-                        // Di sini kita gunakan changed() untuk refresh layer
-                        lyr_Lotfinal_0.set('displayLabels', isVisible);
-                        lyr_Lotfinal_0.changed();
+                        // Menetapkan style baru dengan atau tanpa label
+                        lyr_Lotfinal_0.setStyle(function(f) {
+                            return getLotStyle(f, isVisible);
+                        });
                     }
                 }
             }
 
             function highlightFeature(feature, coordinate) {
                 highlightLayer.getSource().clear(); 
-                
-                // Reset/Sembunyi Koordinat Panel
                 document.getElementById('coordDisplay').classList.add('hidden');
 
                 if (feature) {
@@ -175,10 +191,8 @@
                     document.getElementById('ownerName').innerText = props['tsp — pe'] || 'DATA TIADA';
                     document.getElementById('lotArea').innerText = (props.AREA || '0') + " m²";
 
-                    // Jika ada koordinat (hasil klik), paparkan
                     if (coordinate) {
                         document.getElementById('coordDisplay').classList.remove('hidden');
-                        // Format Koordinat (Meter)
                         var x = coordinate[0].toFixed(3);
                         var y = coordinate[1].toFixed(3);
                         document.getElementById('coordValue').innerHTML = "E: " + x + "<br>N: " + y;
@@ -188,7 +202,6 @@
 
             map.on('singleclick', function (evt) {
                 var feature = map.forEachFeatureAtPixel(evt.pixel, function (feat) { return feat; });
-                // Pass feature dan koordinat klik ke fungsi highlight
                 highlightFeature(feature, evt.coordinate);
             });
 
@@ -214,13 +227,15 @@
                             maxZoom: 19
                         });
                         
-                        // Paparkan feature dan koordinat pusat lot
                         highlightFeature(f, center);
                         found = true;
                     }
                 });
                 if(!found) alert("Tiada data dijumpai untuk: " + val);
             }
+
+            // Pastikan label dimatikan pada mulanya untuk prestasi
+            toggleLayer('label', false);
         </script>
     </body>
 </html>
