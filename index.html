@@ -25,9 +25,8 @@
             input:checked + .slider { background-color: #22c55e; }
             input:checked + .slider:before { transform: translateX(14px); }
 
-            /* Hide elements during print */
             @media print {
-                nav, aside, .button-container { display: none !important; }
+                nav, aside { display: none !important; }
                 #map { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; }
             }
         </style>
@@ -80,14 +79,15 @@
                     </div>
                 </div>
 
-                <div class="space-y-3 mb-6">
+                <div class="space-y-3 mb-8">
                     <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Carian Data</label>
                     <input type="text" id="lotInput" placeholder="No Lot atau Nama Pemilik" 
                         class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm text-white focus:ring-2 focus:ring-green-500 outline-none transition-all">
                     <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2.5 rounded-md text-sm font-bold transition text-white shadow-lg">Cari Data</button>
+                    
                     <div class="flex gap-2">
-                        <button onclick="window.print()" class="flex-1 bg-blue-700 hover:bg-blue-600 py-2.5 rounded-md text-sm font-bold transition text-white">Cetak Peta</button>
-                        <button onclick="location.reload()" class="flex-1 bg-gray-700 hover:bg-red-600 py-2.5 rounded-md text-sm font-bold transition text-white">Reset</button>
+                        <button onclick="window.print()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded-md text-xs font-bold transition text-white">Cetak Peta</button>
+                        <button onclick="location.reload()" class="flex-1 bg-gray-700 hover:bg-red-600 py-2 rounded-md text-xs font-bold transition text-white">Reset</button>
                     </div>
                 </div>
 
@@ -98,7 +98,7 @@
                     </div>
                     
                     <div id="coordDisplay" class="bg-card border-l-4 border-blue-500 p-4 rounded-r-md hidden">
-                        <p class="text-[9px] text-gray-400 font-bold uppercase">Koordinat Titik</p>
+                        <p class="text-[9px] text-gray-400 font-bold uppercase">Koordinat (E, N)</p>
                         <p class="text-blue-400 text-xs font-mono" id="coordValue">-</p>
                     </div>
 
@@ -126,6 +126,9 @@
         <script src="./resources/qgis2web.js"></script>
 
         <script>
+            // Variabel simpan status label
+            var isLabelOn = false;
+
             // 1. Google Satellite
             var lyr_GoogleSatellite = new ol.layer.Tile({
                 title: 'Google Satellite',
@@ -148,19 +151,28 @@
             });
             map.addLayer(highlightLayer);
 
-            // Fungsi Global Style Label (Fungsi Baru)
-            function getLotStyle(feature, isLabelVisible) {
-                return new ol.style.Style({
-                    stroke: new ol.style.Stroke({ color: 'rgba(35,35,35,1.0)', width: 1 }),
-                    fill: new ol.style.Fill({ color: 'rgba(125,139,143,0.0)' }), // Lutsinar
-                    text: isLabelVisible ? new ol.style.Text({
-                        text: String(feature.get('NO_LOT')),
-                        font: 'bold 12px "Open Sans", sans-serif',
-                        fill: new ol.style.Fill({ color: '#ffffff' }),
-                        stroke: new ol.style.Stroke({ color: '#000000', width: 2 }),
-                        overflow: true
-                    }) : null
-                });
+            // Fungsi untuk bina style dinamik (PENTING: Kekalkan style asal qgis2web)
+            function updateLotStyle() {
+                if (typeof lyr_Lotfinal_0 !== 'undefined') {
+                    lyr_Lotfinal_0.setStyle(function(feature) {
+                        // Guna stail asal poligon dari qgis2web
+                        var style = style_Lotfinal_0(feature); 
+                        
+                        // Tambah label jika toggle ON
+                        if (isLabelOn) {
+                            style.setText(new ol.style.Text({
+                                text: String(feature.get('NO_LOT') || ''),
+                                font: 'bold 12px Arial',
+                                fill: new ol.style.Fill({ color: '#ffffff' }),
+                                stroke: new ol.style.Stroke({ color: '#000000', width: 3 }),
+                                placement: 'point'
+                            }));
+                        } else {
+                            style.setText(null);
+                        }
+                        return style;
+                    });
+                }
             }
 
             // FUNGSI ON/OFF LAYER DINAMIK
@@ -170,12 +182,8 @@
                 } else if (type === 'lot') {
                     if (typeof lyr_Lotfinal_0 !== 'undefined') lyr_Lotfinal_0.setVisible(isVisible);
                 } else if (type === 'label') {
-                    if (typeof lyr_Lotfinal_0 !== 'undefined') {
-                        // Menetapkan style baru dengan atau tanpa label
-                        lyr_Lotfinal_0.setStyle(function(f) {
-                            return getLotStyle(f, isVisible);
-                        });
-                    }
+                    isLabelOn = isVisible;
+                    updateLotStyle();
                 }
             }
 
@@ -193,9 +201,8 @@
 
                     if (coordinate) {
                         document.getElementById('coordDisplay').classList.remove('hidden');
-                        var x = coordinate[0].toFixed(3);
-                        var y = coordinate[1].toFixed(3);
-                        document.getElementById('coordValue').innerHTML = "E: " + x + "<br>N: " + y;
+                        document.getElementById('coordValue').innerHTML = 
+                            "E: " + coordinate[0].toFixed(3) + "<br>N: " + coordinate[1].toFixed(3);
                     }
                 }
             }
@@ -205,7 +212,6 @@
                 highlightFeature(feature, evt.coordinate);
             });
 
-            // FUNGSI CARIAN LOT ATAU NAMA
             function searchLot() {
                 var val = document.getElementById('lotInput').value.trim().toLowerCase();
                 if(!val) return alert("Sila masukkan No Lot atau Nama Pemilik.");
@@ -219,23 +225,13 @@
                     
                     if(noLot === val || ownerName.includes(val)) {
                         var extent = f.getGeometry().getExtent();
-                        var center = ol.extent.getCenter(extent);
-                        
-                        map.getView().fit(extent, {
-                            duration: 1200, 
-                            padding: [100, 100, 100, 100],
-                            maxZoom: 19
-                        });
-                        
-                        highlightFeature(f, center);
+                        map.getView().fit(extent, { duration: 1200, padding: [100, 100, 100, 100], maxZoom: 19 });
+                        highlightFeature(f, ol.extent.getCenter(extent));
                         found = true;
                     }
                 });
                 if(!found) alert("Tiada data dijumpai untuk: " + val);
             }
-
-            // Pastikan label dimatikan pada mulanya untuk prestasi
-            toggleLayer('label', false);
         </script>
     </body>
 </html>
