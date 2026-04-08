@@ -1,369 +1,226 @@
 <!doctype html>
-
 <html lang="en">
-
     <head>
-
         <meta charset="utf-8">
-
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
-
         <script src="https://cdn.tailwindcss.com"></script>
-
         <link rel="stylesheet" href="./resources/ol.css">
-
         <link rel="stylesheet" href="resources/fontawesome-all.min.css">
-
         <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
-
         <link rel="stylesheet" href="./resources/qgis2web.css">
-
         
-
         <style>
-
             html, body { height: 100%; margin: 0; padding: 0; background-color: #ffffff; overflow: hidden; }
-
             #map { width: 100%; height: 100%; }
-
             .bg-navbar { background-color: #2d5a27; } 
-
             .bg-sidebar { background-color: #1e212d; }
-
             .bg-card { background-color: #111319; }
-
             .text-accent { color: #4ade80; }
-
             
-
             .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
-
             .switch input { opacity: 0; width: 0; height: 0; }
-
             .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
-
             .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-
             input:checked + .slider { background-color: #22c55e; }
-
             input:checked + .slider:before { transform: translateX(14px); }
-
         </style>
-
         <title>Smart Resident - Land Explorer</title>
-
     </head>
-
     <body class="flex flex-col h-screen">
 
-
-
         <nav class="h-[100px] bg-navbar flex items-center justify-center px-6 shadow-lg z-[2000] shrink-0 border-b border-green-800">
-
             <div class="flex flex-row items-center gap-6">
-
                 <div class="logo-container bg-white p-2 rounded-md w-20 h-20 flex items-center justify-center">
-
                     <img src="Poli_Logo.png" alt="Logo" class="w-full h-full object-contain">
-
                 </div>
-
                 <div class="flex flex-col leading-tight">
-
                     <h1 class="text-white text-3xl font-extrabold italic uppercase tracking-wider">smart resident</h1>
-
                     <span class="text-xs text-green-400 font-bold uppercase tracking-[0.4em]">Land Explorer System</span>
-
                 </div>
-
             </div>
-
         </nav>
 
-
-
         <div class="flex flex-1 overflow-hidden relative">
-
             <div id="map" class="flex-1 z-0 relative"></div>
 
-
-
             <aside class="w-80 bg-sidebar h-full text-white p-5 shadow-2xl z-[1001] border-l border-gray-800 overflow-y-auto">
-
                 
-
                 <div class="mb-6 p-4 bg-card rounded-md border border-gray-700 space-y-4">
-
                     <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-3">Kawalan Layer</p>
-
                     
-
                     <div class="flex items-center justify-between">
-
                         <span class="text-sm font-medium">Batu Sempadan</span>
-
                         <label class="switch">
-
                             <input type="checkbox" id="toggleBatu" checked onchange="toggleLayer('batu', this.checked)">
-
                             <span class="slider"></span>
-
                         </label>
-
                     </div>
-
-
 
                     <div class="flex items-center justify-between">
-
                         <span class="text-sm font-medium">Lot Final</span>
-
                         <label class="switch">
-
                             <input type="checkbox" id="toggleLot" checked onchange="toggleLayer('lot', this.checked)">
-
                             <span class="slider"></span>
-
                         </label>
-
                     </div>
 
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Label No Lot</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleLabel" checked onchange="toggleLayer('label', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
-
-
 
                 <div class="space-y-3 mb-8">
-
                     <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Carian Data</label>
-
                     <input type="text" id="lotInput" placeholder="No Lot atau Nama Pemilik" 
-
                         class="w-full bg-card border border-gray-700 rounded-md p-3 text-sm text-white focus:ring-2 focus:ring-green-500 outline-none transition-all">
-
                     <button onclick="searchLot()" class="w-full bg-green-700 hover:bg-green-600 py-2.5 rounded-md text-sm font-bold transition text-white shadow-lg">Cari Data</button>
-
                     <button onclick="location.reload()" class="w-full bg-gray-700 hover:bg-red-600 py-2.5 rounded-md text-sm font-bold transition text-white">Reset Peta</button>
-
                 </div>
-
-
 
                 <div class="space-y-4">
-
                     <div class="bg-card border-l-4 border-green-500 p-4 rounded-r-md">
-
                         <p class="text-[9px] text-gray-500 font-bold uppercase">No Lot Dipilih</p>
-
                         <p class="text-accent text-lg font-bold" id="selectedLot">-</p>
-
+                    </div>
+                    
+                    <div id="coordDisplay" class="bg-card border-l-4 border-blue-500 p-4 rounded-r-md hidden">
+                        <p class="text-[9px] text-gray-400 font-bold uppercase">Koordinat Titik</p>
+                        <p class="text-blue-400 text-xs font-mono" id="coordValue">-</p>
                     </div>
 
                     <div class="bg-card border-l-4 border-green-500 p-4 rounded-r-md">
-
                         <p class="text-[9px] text-gray-500 font-bold uppercase">Nama Pemilik</p>
-
                         <p class="text-accent text-sm font-bold uppercase" id="ownerName">-</p>
-
                     </div>
-
                     <div class="bg-card border-l-4 border-green-500 p-4 rounded-r-md">
-
                         <p class="text-[9px] text-gray-500 font-bold uppercase">Luas Lot</p>
-
                         <p class="text-accent text-lg font-bold" id="lotArea">0 m²</p>
-
                     </div>
-
                 </div>
-
             </aside>
-
         </div>
 
-
-
         <script src="resources/qgis2web_expressions.js"></script>
-
         <script src="./resources/functions.js"></script>
-
         <script src="./resources/ol.js"></script>
-
         <script src="./resources/ol-layerswitcher.js"></script>
-
         <script src="layers/Lotfinal_0.js"></script>
-
         <script src="layers/batusempadanmerge_1.js"></script>
-
         <script src="styles/Lotfinal_0_style.js"></script>
-
         <script src="styles/batusempadanmerge_1_style.js"></script>
-
         <script src="./layers/layers.js" type="text/javascript"></script> 
-
         <script src="./resources/qgis2web.js"></script>
 
-
-
         <script>
-
             // 1. Google Satellite
-
             var lyr_GoogleSatellite = new ol.layer.Tile({
-
                 title: 'Google Satellite',
-
                 type: 'base',
-
                 visible: true,
-
                 source: new ol.source.XYZ({
-
                     url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
-
                 })
-
             });
-
             map.getLayers().insertAt(0, lyr_GoogleSatellite);
 
-
-
             // 2. Highlight Layer
-
             var highlightLayer = new ol.layer.Vector({
-
                 source: new ol.source.Vector(),
-
                 style: new ol.style.Style({
-
                     fill: new ol.style.Fill({ color: 'rgba(255, 255, 0, 0.4)' }),
-
                     stroke: new ol.style.Stroke({ color: '#ffcc33', width: 4 })
-
                 }),
-
                 zIndex: 100
-
             });
-
             map.addLayer(highlightLayer);
 
-
-
             // FUNGSI ON/OFF LAYER DINAMIK
-
             function toggleLayer(type, isVisible) {
-
                 if (type === 'batu') {
-
                     if (typeof lyr_batusempadanmerge_1 !== 'undefined') {
-
                         lyr_batusempadanmerge_1.setVisible(isVisible);
-
                     }
-
                 } else if (type === 'lot') {
-
                     if (typeof lyr_Lotfinal_0 !== 'undefined') {
-
                         lyr_Lotfinal_0.setVisible(isVisible);
-
                     }
-
+                } else if (type === 'label') {
+                    // Logik untuk tutup teks/label pada layer Lot
+                    if (typeof lyr_Lotfinal_0 !== 'undefined') {
+                        // Secara teknis mengubah resolusi paparan label atau filter style
+                        // Cara termudah adalah mengawal opacity text melalui style variable jika disokong
+                        // Di sini kita gunakan changed() untuk refresh layer
+                        lyr_Lotfinal_0.set('displayLabels', isVisible);
+                        lyr_Lotfinal_0.changed();
+                    }
                 }
-
             }
 
-
-
-            function highlightFeature(feature) {
-
+            function highlightFeature(feature, coordinate) {
                 highlightLayer.getSource().clear(); 
+                
+                // Reset/Sembunyi Koordinat Panel
+                document.getElementById('coordDisplay').classList.add('hidden');
 
                 if (feature) {
-
                     highlightLayer.getSource().addFeature(feature); 
-
                     var props = feature.getProperties();
-
+                    
                     document.getElementById('selectedLot').innerText = props.NO_LOT || '-';
-
                     document.getElementById('ownerName').innerText = props['tsp — pe'] || 'DATA TIADA';
-
                     document.getElementById('lotArea').innerText = (props.AREA || '0') + " m²";
 
+                    // Jika ada koordinat (hasil klik), paparkan
+                    if (coordinate) {
+                        document.getElementById('coordDisplay').classList.remove('hidden');
+                        // Format Koordinat (Meter)
+                        var x = coordinate[0].toFixed(3);
+                        var y = coordinate[1].toFixed(3);
+                        document.getElementById('coordValue').innerHTML = "E: " + x + "<br>N: " + y;
+                    }
                 }
-
             }
-
-
 
             map.on('singleclick', function (evt) {
-
                 var feature = map.forEachFeatureAtPixel(evt.pixel, function (feat) { return feat; });
-
-                highlightFeature(feature);
-
+                // Pass feature dan koordinat klik ke fungsi highlight
+                highlightFeature(feature, evt.coordinate);
             });
 
-
-
             // FUNGSI CARIAN LOT ATAU NAMA
-
             function searchLot() {
-
                 var val = document.getElementById('lotInput').value.trim().toLowerCase();
-
                 if(!val) return alert("Sila masukkan No Lot atau Nama Pemilik.");
-
                 
-
                 var found = false;
-
                 var features = lyr_Lotfinal_0.getSource().getFeatures();
-
                 
-
                 features.forEach(function(f) {
-
                     var noLot = String(f.get('NO_LOT')).toLowerCase();
-
-                    // Sesuaikan key ['tsp — pe'] dengan nama ruangan pemilik dalam data anda
-
                     var ownerName = String(f.get('tsp — pe') || '').toLowerCase();
-
                     
-
                     if(noLot === val || ownerName.includes(val)) {
-
                         var extent = f.getGeometry().getExtent();
-
+                        var center = ol.extent.getCenter(extent);
+                        
                         map.getView().fit(extent, {
-
                             duration: 1200, 
-
                             padding: [100, 100, 100, 100],
-
                             maxZoom: 19
-
                         });
-
-                        highlightFeature(f);
-
+                        
+                        // Paparkan feature dan koordinat pusat lot
+                        highlightFeature(f, center);
                         found = true;
-
                     }
-
                 });
-
                 if(!found) alert("Tiada data dijumpai untuk: " + val);
-
             }
-
         </script>
-
     </body>
-
-</html>  
+</html>
